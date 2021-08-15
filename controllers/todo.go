@@ -163,3 +163,38 @@ func UpdateTodo(c *fiber.Ctx) error {
 		},
 	})
 }
+
+func DeleteTodo(c *fiber.Ctx) error {
+	// get param
+	paramId := c.Params("id")
+
+	// convert param string to int
+	id, err := strconv.Atoi(paramId)
+
+	// if parameter cannot parse
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status": "error",
+			"error":  "Cannot parse id",
+		})
+	}
+
+	// find and delete todo
+	for i, todo := range todos {
+		if todo.Id == id {
+
+			todos = append(todos[:i], todos[i+1:]...)
+
+			return c.Status(fiber.StatusNoContent).JSON(fiber.Map{
+				"status": "success",
+				"result": "Deleted Succesfully",
+			})
+		}
+	}
+
+	// if todo not found
+	return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+		"status": "error",
+		"error":  "Todo not found",
+	})
+}
