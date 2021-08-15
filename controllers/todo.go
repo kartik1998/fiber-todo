@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -59,6 +60,103 @@ func CreateTodo(c *fiber.Ctx) error {
 	todos = append(todos, todo)
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"status": "success",
+		"result": fiber.Map{
+			"todo": todo,
+		},
+	})
+}
+
+func GetTodo(c *fiber.Ctx) error {
+	// get parameter value
+	paramId := c.Params("id")
+
+	// convert parameter value string to int
+	id, err := strconv.Atoi(paramId)
+
+	// if error in parsing string to int
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status": "error",
+			"error":  "Cannot parse Id",
+		})
+	}
+
+	// find todo and return
+	for _, todo := range todos {
+		if todo.Id == id {
+			return c.Status(fiber.StatusOK).JSON(fiber.Map{
+				"status": "success",
+				"result": fiber.Map{
+					"todo": todo,
+				},
+			})
+		}
+	}
+
+	// if todo not available
+	return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+		"status": "error",
+		"error":  "Todo not found",
+	})
+}
+
+func UpdateTodo(c *fiber.Ctx) error {
+	// find parameter
+	paramId := c.Params("id")
+
+	// convert parameter string to int
+	id, err := strconv.Atoi(paramId)
+
+	// if parameter cannot parse
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status": "error",
+			"error":  "Cannot parse id",
+		})
+	}
+
+	// request structure
+	type Request struct {
+		Title     *string `json:"title"`
+		Completed *bool   `json:"completed"`
+	}
+
+	var body Request
+	err = c.BodyParser(&body)
+
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status": "error",
+			"result": "Cannot parse JSON",
+		})
+	}
+
+	var todo *Todo
+
+	for _, t := range todos {
+		if t.Id == id {
+			todo = t
+			break
+		}
+	}
+
+	if todo.Id == 0 {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"status": "error",
+			"error":  "Not found",
+		})
+	}
+
+	if body.Title != nil {
+		todo.Title = *body.Title
+	}
+
+	if body.Completed != nil {
+		todo.Completed = *body.Completed
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"status": "success",
 		"result": fiber.Map{
 			"todo": todo,
